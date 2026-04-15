@@ -1,0 +1,98 @@
+name: post-release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch: # manual trigger
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get release tag
+        id: get-tag
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$(gh release view --json tagName -q '.tagName')" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.BOT_TOKEN }} # github CLI uses the token
+
+      - name: Generate a changelog # full changelog for all git history
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: pyproject.toml
+          args: --verbose --tag ${{ steps.get-tag.outputs.tag }}
+        env:
+          OUTPUT: CHANGELOG.md
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: changelog
+          path: CHANGELOG.md
+
+  citation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install doi2cff
+        run: pip install git+https://github.com/citation-file-format/doi2cff
+
+      - name: Update CITATION.cff
+        run: | # replace the DOI value with your own Zenodo concept DOI
+          rm -f CITATION.cff
+          max_attempts=10
+          attempt=1
+          until doi2cff init XX.XXXX/zenodo.XXXXXX || [ $attempt -eq $max_attempts ]; do
+            echo "Attempt $attempt failed. Retrying in 60 seconds..."
+            rm -f CITATION.cff
+            sleep 60
+            attempt=$((attempt + 1))
+          done
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: citation
+          path: CITATION.cff
+
+  push_main:
+    needs: [changelog, citation]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - uses: actions/download-artifact@v6
+        with:
+          path: /tmp
+
+      - name: Copy files to repository
+        run: |
+          cp /tmp/changelog/CHANGELOG.md .
+          cp /tmp/citation/CITATION.cff .
+
+      - name: Commit and push directly to main
+        run: | # change the use and email to whatever you need
+          git config user.name "My Bot"
+          git config user.email "mybot@email.com"
+          git add CHANGELOG.md CITATION.cff
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Automated post-release updates"
+          git push origin HEAD:main

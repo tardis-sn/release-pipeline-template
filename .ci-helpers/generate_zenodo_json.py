@@ -1,12 +1,8 @@
 """Generate .zenodo.json for the current repository."""
 
-import csv
 import json
 import subprocess
 from pathlib import Path
-
-import orcid
-
 
 ORCID_PATH = Path("../.orcid.csv")
 OUTPUT_PATH = Path("../.zenodo.json")
@@ -103,68 +99,16 @@ def build_authors() -> list[dict[str, str | int]]:
     return unique_authors
 
 
-def load_orcid_map() -> dict[str, str]:
-    """Load ORCID identifiers indexed by author email from .orcid.csv."""
-
-    with ORCID_PATH.open(newline="") as orcid_file:
-        reader = csv.DictReader(orcid_file)
-        return {
-            row["email"]: row["orcid"].strip()
-            for row in reader
-            if row.get("email") and row.get("orcid") and row["orcid"].strip()
-        }
-
-
-def create_orcid_api() -> tuple[orcid.PublicAPI, str] | None:
-    """Create the ORCID API client and fetch a search token if configured."""
-
-    if not KEY_SECRET_PATH.exists():
-        print(f"Skipping ORCID API lookup: {KEY_SECRET_PATH} not found.")
-        return None
-
-    with KEY_SECRET_PATH.open() as key_secret_file:
-        keys = json.load(key_secret_file)
-
-    api = orcid.PublicAPI(keys["key"], keys["secret"])
-    token = api.get_search_token_from_orcid()
-    return api, token
-
-
-def get_affiliation(api: orcid.PublicAPI, token: str, orcid_id: str) -> str | None:
-    """Return the first public employment affiliation for an ORCID record."""
-
-    author_orcid = api.read_record_public(orcid_id, "record", token)
-
-    try:
-        return author_orcid["activities-summary"]["employments"]["employment-summary"][
-            0
-        ]["organization"]["name"]
-    except IndexError:
-        return None
-
-
 def build_zenodo_creators() -> list[dict[str, str]]:
     """Build the Zenodo creators payload from git and ORCID metadata."""
 
     authors = build_authors()
-    orcid_map = load_orcid_map()
-    orcid_api = create_orcid_api()
 
     zenodo_authors = []
     for author in authors:
         zenodo_entry = {
             "name": f"{author['last_name']}, {author['first_name']}",
         }
-        orcid_id = orcid_map.get(str(author["email"]))
-
-        if orcid_id:
-            zenodo_entry["orcid"] = orcid_id
-            if orcid_api is not None:
-                api, token = orcid_api
-                affiliation = get_affiliation(api, token, orcid_id)
-                if affiliation:
-                    zenodo_entry["affiliation"] = affiliation
-                    print(author["last_name"], affiliation)
 
         zenodo_authors.append(zenodo_entry)
 
