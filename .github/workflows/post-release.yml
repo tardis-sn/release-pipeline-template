@@ -20,7 +20,7 @@ jobs:
             echo "tag=$(gh release view --json tagName -q '.tagName')" >> $GITHUB_OUTPUT
           fi
         env:
-          GH_TOKEN: ${{ secrets.BOT_TOKEN }} # github CLI uses the token
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # github CLI uses the token
 
       - name: Generate a changelog # full changelog for all git history
         uses: orhun/git-cliff-action@v4
@@ -53,7 +53,7 @@ jobs:
           rm -f CITATION.cff
           max_attempts=10
           attempt=1
-          until doi2cff init XX.XXXX/zenodo.XXXXXX || [ $attempt -eq $max_attempts ]; do
+          until doi2cff init 10.5281/zenodo.19600089 || [ $attempt -eq $max_attempts ]; do
             echo "Attempt $attempt failed. Retrying in 60 seconds..."
             rm -f CITATION.cff
             sleep 60

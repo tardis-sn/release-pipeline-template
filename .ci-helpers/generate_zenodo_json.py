@@ -4,9 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
-ORCID_PATH = Path("../.orcid.csv")
 OUTPUT_PATH = Path("../.zenodo.json")
-KEY_SECRET_PATH = Path("../key_secret.json")
 CI_EMAILS = {"my-bot@email.com"}
 
 
