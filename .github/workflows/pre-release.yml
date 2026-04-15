@@ -35,7 +35,6 @@ jobs:
       - uses: actions/checkout@v6 # clone repo
         with:
           ref: main
-          token: ${{ secrets.BOT_TOKEN }}
 
       - uses: actions/download-artifact@v6
         with:
