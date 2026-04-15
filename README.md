@@ -6,6 +6,19 @@ simplifications.
 
 Publishes a new release every Sunday at 00:00 UTC using calendar versioning by default.
 
+## Usage
+
+1. Connect your repository on Zenodo, see <https://help.zenodo.org/docs/github/>.
+1. Make sure you have a reserved DOI on Zenodo by making a manual
+release. Consider adding specific information.
+1. Replace the DOI of this repository in these files:
+    <https://github.com/tardis-sn/release-pipeline-template/blob/eb7b95ab109ce601221ab745e5c3b670a296a5f3/.github/workflows/release.yml#L65>
+
+    <https://github.com/tardis-sn/release-pipeline-template/blob/eb7b95ab109ce601221ab745e5c3b670a296a5f3/.github/workflows/post-release.yml#L56>
+
+1. Test the pipeline by running it using the workflow dispatch trigger on the
+pre-release workflow.
+
 > Note:
     If your main branch is protected, take a look at the full TARDIS 
     release pipeline, which includes automated reviews with tokens.
