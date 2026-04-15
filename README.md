@@ -8,9 +8,10 @@ Publishes a new release every Sunday at 00:00 UTC using calendar versioning by d
 
 ## Usage
 
+1. Copy the files in this repository to your own. Everything except README.md is required.
+1. Add configuration for `git-cliff` to use your preferred changelog format. The default is Conventional Commits. See <https://git-cliff.org/docs/>.
 1. Connect your repository on Zenodo, see <https://help.zenodo.org/docs/github/>.
-1. Make sure you have a reserved DOI on Zenodo by making a manual
-release. Consider adding specific information.
+1. Make sure you have a reserved DOI on Zenodo by making a manual release. Consider adding specific information.
 1. Replace the DOI of this repository in these files:
     <https://github.com/tardis-sn/release-pipeline-template/blob/eb7b95ab109ce601221ab745e5c3b670a296a5f3/.github/workflows/release.yml#L65>
 
