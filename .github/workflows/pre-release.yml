@@ -1,0 +1,70 @@
+name: pre-release
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Sunday at 00:00 UTC
+  workflow_dispatch: # manual trigger
+
+jobs:
+  zenodo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6 # clone repo
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Run Zenodo json generator
+        run: python .ci-helpers/generate_zenodo_json.py
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: zenodo_json
+          path: .zenodo.json
+          if-no-files-found: warn
+          include-hidden-files: true
+
+  push_main: # separate job to allow additional dependencies
+    needs: [zenodo]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6 # clone repo
+        with:
+          ref: main
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - uses: actions/download-artifact@v6
+        with:
+          path: /tmp
+
+      - name: Check for generated Zenodo JSON and copy if exists
+        run: |
+          if [ -f "/tmp/zenodo_json/.zenodo.json" ]; then
+            cp /tmp/zenodo_json/.zenodo.json .
+            echo "Using generated zenodo file"
+          else
+            echo "No zenodo file found, defaulting to one in main"
+          fi
+
+      - name: Commit and push directly to main
+        run: |
+          git config user.name "My Bot"
+          git config user.email "mybot@email.com"
+          git add .zenodo.json
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git commit -m "Automated changes for pre-release"
+          git push origin HEAD:main
+
+  release:
+    needs: [push_main]
+    uses: ./.github/workflows/release.yml
+    with:
+      called-from-pre-release: true
+    secrets: inherit # pass secrets
