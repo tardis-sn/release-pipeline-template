@@ -1,0 +1,16 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it using these metadata.
+# FIXME title as repository name might not be the best name, please make human readable
+title: 'tardis-sn/release-pipeline-template: v2026.04.15'
+doi: 10.5281/zenodo.19600089
+# FIXME splitting of full names is error prone, please check if given/family name are correct
+authors:
+- given-names: TARDIS
+  family-names: Collaboration
+  affiliation:
+version: 2026.04.15
+date-released: 2026-04-16
+repository-code: https://github.com/tardis-sn/release-pipeline-template
+license: cc-by-4.0
