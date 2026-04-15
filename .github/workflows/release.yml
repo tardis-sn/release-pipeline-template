@@ -53,7 +53,10 @@ jobs:
           name: v${{ env.NEW_TAG }}
           tag_name: release-${{ env.NEW_TAG }}
           token: ${{ secrets.GITHUB_TOKEN}}
-          body: "This release has been created automatically by the continuous delivery pipeline."
+          body: |
+            This repository includes GitHub actions designed to make it easy to maintain a regularly updated repository on Zenodo.
+
+            This release has been created automatically by the continuous delivery pipeline.
           draft: false # cannot be draft or Zenodod will not trigger
 
       - name: Wait for Zenodo to update the latest release
@@ -85,12 +88,10 @@ jobs:
         with:
           tag_name: release-${{ env.NEW_TAG }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          body: | # edit the repository link to the changelog file
+          body: |
+            This repository includes GitHub actions designed to make it easy to maintain a regularly updated repository on Zenodo."
             This release has been created automatically by the continuous delivery pipeline.
             ${{ env.doi_badge }}
 
-          files:
-            | # add whatever additional files are useful to include in a release
-            useful-file.md
           fail_on_unmatched_files: false
           draft: false
