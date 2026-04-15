@@ -2,12 +2,12 @@ name: release
 
 on:
   workflow_dispatch: # manual trigger
-  workflow_call: # called by pre-release when no PR is created
+  workflow_call: # called by pre-release after updating main
     inputs:
       called-from-pre-release:
         type: boolean
         default: true
-  pull_request_target: # called by a PR to main branch created by pre-release
+  pull_request_target: # optional: called by merged pre-release PRs
     branches: [main]
     types: [closed]
 
@@ -23,29 +23,37 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-
-      - name: Install setuptools_scm
-        run: pip install "setuptools_scm<7"
-
-      - name: Show current version
-        run: python .ci-helpers/get_current_version.py
-
-      - name: Get next version
+      - name: Compute current and next calendar versions
         run: |
-          python .ci-helpers/get_next_version.py
-          echo "NEW_TAG=$(python .ci-helpers/get_next_version.py)" >> $GITHUB_ENV
+          set -euo pipefail
+
+          current_tag="$(git tag --list 'release-*' --sort=-v:refname | head -n1)"
+          current_version="${current_tag#release-}"
+          if [ -z "$current_tag" ]; then
+            current_version="none"
+          fi
+
+          today="$(date -u +'%Y.%m.%d')"
+          escaped_today="${today//./\\.}"
+
+          if [[ "$current_version" =~ ^${escaped_today}(\.([0-9]+))?$ ]]; then
+            build="${BASH_REMATCH[2]:-0}"
+            next_version="${today}.$((build + 1))"
+          else
+            next_version="$today"
+          fi
+
+          echo "Current version: $current_version"
+          echo "Next version: $next_version"
+          echo "NEW_TAG=$next_version" >> "$GITHUB_ENV"
 
       - name: Initialize release
         uses: softprops/action-gh-release@v2
         with:
-          name: TARDIS v${{ env.NEW_TAG }}
+          name: v${{ env.NEW_TAG }}
           tag_name: release-${{ env.NEW_TAG }}
           token: ${{ secrets.BOT_TOKEN }}
-          body: "This release has been created automatically by the TARDIS continuous delivery pipeline."
+          body: "This release has been created automatically by the continuous delivery pipeline."
           draft: false # cannot be draft or Zenodod will not trigger
 
       - name: Wait for Zenodo to update the latest release
@@ -71,7 +79,6 @@ jobs:
 
           # Store results in GitHub environment variables
           echo "doi_badge=${doi_badge}" >> $GITHUB_ENV
-          echo "doi_url=${url}" >> $GITHUB_ENV
 
       - name: Update release with DOI
         uses: softprops/action-gh-release@v2
