@@ -52,7 +52,7 @@ jobs:
         with:
           name: v${{ env.NEW_TAG }}
           tag_name: release-${{ env.NEW_TAG }}
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN}}
           body: "This release has been created automatically by the continuous delivery pipeline."
           draft: false # cannot be draft or Zenodod will not trigger
 
@@ -84,7 +84,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: release-${{ env.NEW_TAG }}
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           body: | # edit the repository link to the changelog file
             This release has been created automatically by the continuous delivery pipeline.
             ${{ env.doi_badge }}
